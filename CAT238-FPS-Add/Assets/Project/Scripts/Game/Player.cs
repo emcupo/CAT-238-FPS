@@ -11,14 +11,16 @@ public class Player : MonoBehaviour
     private int ammo;
     public int Ammo { get { return ammo; } }
 
-    public float knockbackForce = 10f;
-    private bool isHurt;
-    public float hurtDuration = 0.5f;
     public int initialHealth = 100;
     private int health;
     public int Health { get { return health; } }
 
+    public float knockbackForce = 100f;
+    private bool isHurt;
+    public float hurtDuration = 0.5f;
 
+    private bool killed;
+    public bool Killed { get { return killed; } }
     // Start is called before the first frame update
     void Start()
     {
@@ -37,7 +39,7 @@ public class Player : MonoBehaviour
                 // Decrease the ammo
                 ammo--;
                 // Object Pooling Scripts + Creating a bullet
-                GameObject bulletObject = ObjectPoolingManager.Instance.GetBullet();
+                GameObject bulletObject = ObjectPoolingManager.Instance.GetBullet(true);
                 bulletObject.transform.position = playerCamera.transform.position + transform.forward;
                 bulletObject.transform.forward = playerCamera.transform.forward;
             }
@@ -55,14 +57,60 @@ public class Player : MonoBehaviour
             // Destroy the AmmoCrate Object
             Destroy(ammoCrate.gameObject);
         }
-        else if (otherCollider.GetComponent<Enemy>() != null)
+        if (isHurt == false)
         {
-            // Get Enemy and ready for it use
-            Enemy enemy = otherCollider.GetComponent<Enemy>();
-            // Taking a damage
-            health -= enemy.damage;
+            GameObject hazard = null;
 
+            if (otherCollider.GetComponent<Enemy>() != null)
+            {
+                // Get Enemy and ready for it use
+                Enemy enemy = otherCollider.GetComponent<Enemy>();
+                // Taking a damage
+                health -= enemy.damage;
+                // is Hurt is triggering
+                hazard = enemy.gameObject;
+            }
+            else if (otherCollider.GetComponent<Bullet>() != null)
+            {
+                Bullet bullet = otherCollider.GetComponent<Bullet>();
+                if (bullet.ShotByPlayer == false)
+                {
+                    hazard = bullet.gameObject;
+                    health -= bullet.damage;
+                    bullet.gameObject.SetActive(false);
+                }
+            }
+            if (hazard != null)
+            {
+                isHurt = true;
+
+                // Perform the knockback effect
+                Vector3 hurtDirection = (transform.position - hazard.transform.position).normalized;
+                Vector3 knockbackDirection = (hurtDirection + Vector3.up).normalized;
+                GetComponent<ForceReceiver>().AddForce(knockbackDirection, knockbackForce);
+
+                StartCoroutine(HurtRoutine());
+            }
+            if (health <= 0)
+            {
+                if (killed == false)
+                {
+                    killed = true;
+                    OnKill();
+                }
+            }
         }
+    }
+
+    IEnumerator HurtRoutine()
+    {
+        yield return new WaitForSeconds(hurtDuration);
+        isHurt = false;
+    }
+
+    private void OnKill()
+    {
+
     }
 
 }

@@ -19,7 +19,7 @@ public class ObjectPoolingManager : MonoBehaviour
         // Preload bullets
         bullets = new List<GameObject>(bulletAmount);
 
-        for(int i = 0; i< bulletAmount; i++)
+        for (int i = 0; i < bulletAmount; i++)
         {
             GameObject prefabInstance = Instantiate(bulletPrefab);
             prefabInstance.transform.SetParent(transform);
@@ -29,19 +29,21 @@ public class ObjectPoolingManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    public GameObject GetBullet()
+    public GameObject GetBullet(bool shotByPlayer)
     {
-        foreach(GameObject bullet in bullets)
+        foreach (GameObject bullet in bullets)
         {
-            if(!bullet.activeInHierarchy)
+            if (!bullet.activeInHierarchy)
             {
                 bullet.SetActive(true);
+                bullet.GetComponent<Bullet>().ShotByPlayer = shotByPlayer;
                 return bullet;
             }
         }
 
         GameObject prefabInstance = Instantiate(bulletPrefab);
         prefabInstance.transform.SetParent(transform);
+        prefabInstance.GetComponent<Bullet>().ShotByPlayer = shotByPlayer;
         bullets.Add(prefabInstance);
 
         return prefabInstance;
